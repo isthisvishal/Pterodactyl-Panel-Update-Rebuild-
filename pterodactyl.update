@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+
+PANEL_DIR="/var/www/pterodactyl"
+
+cd $PANEL_DIR
+
+echo "🔧 Putting panel into maintenance mode..."
+php artisan down || true
+
+echo "⬇️ Downloading latest Pterodactyl panel release..."
+curl -L https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz -o panel.tar.gz
+
+echo "📦 Extracting update..."
+tar -xzvf panel.tar.gz
+rm panel.tar.gz
+
+echo "📚 Installing PHP dependencies..."
+composer install --no-dev --optimize-autoloader
+
+echo "🗂 Running database migrations..."
+php artisan migrate --force
+
+echo "📁 Setting correct permissions..."
+chown -R www-data:www-data $PANEL_DIR
+
+echo "🔄 Clearing cache..."
+php artisan view:clear
+php artisan
