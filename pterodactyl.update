@@ -1,30 +1,48 @@
 #!/bin/bash
 
+# Exit on any error
 set -e
 
+# Path to Pterodactyl panel
 PANEL_DIR="/var/www/pterodactyl"
 
-cd $PANEL_DIR
+# Move to panel directory
+echo "[INFO] Switching to panel directory..."
+cd "$PANEL_DIR"
 
-echo "🔧 Putting panel into maintenance mode..."
+# Maintenance mode
+echo "[INFO] Enabling maintenance mode..."
 php artisan down || true
 
-echo "⬇️ Downloading latest Pterodactyl panel release..."
+# Download latest release
+echo "[INFO] Downloading latest Pterodactyl Panel release..."
 curl -L https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz -o panel.tar.gz
 
-echo "📦 Extracting update..."
-tar -xzvf panel.tar.gz
-rm panel.tar.gz
+# Extract new files
+echo "[INFO] Extracting files..."
+tar -xzf panel.tar.gz
+rm -f panel.tar.gz
 
-echo "📚 Installing PHP dependencies..."
+# Install composer dependencies
+echo "[INFO] Installing composer dependencies..."
 composer install --no-dev --optimize-autoloader
 
-echo "🗂 Running database migrations..."
+# Run migrations
+echo "[INFO] Running database migrations..."
 php artisan migrate --force
 
-echo "📁 Setting correct permissions..."
-chown -R www-data:www-data $PANEL_DIR
+# Set correct ownership
+echo "[INFO] Fixing permissions..."
+chown -R www-data:www-data "$PANEL_DIR"
 
-echo "🔄 Clearing cache..."
+# Clear caches
+echo "[INFO] Clearing cache..."
 php artisan view:clear
-php artisan
+php artisan config:clear
+php artisan cache:clear
+
+# Disable maintenance mode
+echo "[INFO] Disabling maintenance mode..."
+php artisan up
+
+echo "[DONE] Pterodactyl Panel update completed successfully!"
